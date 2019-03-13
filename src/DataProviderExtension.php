@@ -23,7 +23,7 @@ class DataProviderExtension implements Extension
         }, ['event_dispatcher.listeners']);
 
         $container->define('runner.maintainers.data_provider', function () use ($container) {
-            return new DataProviderMaintainer(new ExampleParser());
+            return new DataProviderMaintainer(new ExampleParser(), new DataProviderExtractor());
         }, ['runner.maintainers']);
     }
 }

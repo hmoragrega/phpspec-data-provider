@@ -2,6 +2,7 @@
 
 namespace HMoragrega\PhpSpec\DataProvider\Maintainer;
 
+use HMoragrega\PhpSpec\DataProvider\Parser\DataProviderExtractor;
 use HMoragrega\PhpSpec\DataProvider\Parser\ExampleParser;
 use PhpSpec\Loader\Node\ExampleNode;
 use PhpSpec\Runner\CollaboratorManager;
@@ -19,16 +20,23 @@ class DataProviderMaintainer implements Maintainer
     private $exampleParser;
 
     /**
+     * @var DataProviderExtractor
+     */
+    private $dataProviderExtractor;
+
+    /**
      * @var array[]
      */
     private $providerData = [];
 
     /**
-     * @param ExampleParser $exampleParser
+     * @param ExampleParser         $exampleParser
+     * @param DataProviderExtractor $dataProviderExtractor
      */
-    public function __construct(ExampleParser $exampleParser)
+    public function __construct(ExampleParser $exampleParser, DataProviderExtractor $dataProviderExtractor)
     {
-        $this->exampleParser = $exampleParser;
+        $this->exampleParser         = $exampleParser;
+        $this->dataProviderExtractor = $dataProviderExtractor;
     }
 
     /**
@@ -40,22 +48,12 @@ class DataProviderMaintainer implements Maintainer
     public function supports(ExampleNode $example): bool
     {
         $dataProviderMethod = $this->exampleParser->getDataProvider($example);
-        $specification      = $example->getSpecification()->getClassReflection();
 
         if (isset($this->providerData[$dataProviderMethod])) {
             return true;
         }
 
-        if (!$specification->hasMethod($dataProviderMethod)) {
-            return false;
-        }
-
-        $subject      = $specification->newInstance();
-        $providedData = $specification->getMethod($dataProviderMethod)->invoke($subject);
-
-        if (!is_array($providedData)) {
-            return false;
-        }
+        $providedData = $this->dataProviderExtractor->getProvidedData($example, $dataProviderMethod);
 
         foreach ($providedData as $dataRow) {
             if (!is_array($dataRow)) {
@@ -69,9 +67,9 @@ class DataProviderMaintainer implements Maintainer
     }
 
     /**
-     * @param ExampleNode $example
-     * @param Specification $context
-     * @param MatcherManager $matchers
+     * @param ExampleNode         $example
+     * @param Specification       $context
+     * @param MatcherManager      $matchers
      * @param CollaboratorManager $collaborators
      */
     public function prepare(ExampleNode $example, Specification $context, MatcherManager $matchers, CollaboratorManager $collaborators): void
@@ -101,9 +99,9 @@ class DataProviderMaintainer implements Maintainer
     }
 
     /**
-     * @param ExampleNode $example
-     * @param Specification $context
-     * @param MatcherManager $matchers
+     * @param ExampleNode         $example
+     * @param Specification       $context
+     * @param MatcherManager      $matchers
      * @param CollaboratorManager $collaborators
      */
     public function teardown(ExampleNode $example, Specification $context, MatcherManager $matchers, CollaboratorManager $collaborators): void
