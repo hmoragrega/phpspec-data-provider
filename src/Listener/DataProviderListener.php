@@ -38,7 +38,7 @@ class DataProviderListener implements EventSubscriberInterface
         foreach ($event->getSpecification()->getExamples() as $example) {
 
             $dataProviderMethod = $this->getDataProvider($example->getFunctionReflection());
-            if (!$dataProviderMethod) {
+            if (empty($dataProviderMethod)) {
                 continue;
             }
 
@@ -79,15 +79,15 @@ class DataProviderListener implements EventSubscriberInterface
      *
      * @return string|null
      */
-    private function getDataProvider(\ReflectionFunctionAbstract $method): ?string
+    private function getDataProvider(\ReflectionFunctionAbstract $method): string
     {
         $docComment = $method->getDocComment();
         if (false === $docComment) {
-            return null;
+            return '';
         }
 
         if (0 === preg_match('/@dataProvider ([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/', $docComment, $matches)) {
-            return null;
+            return '';
         }
 
         return $matches[1];
