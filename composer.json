@@ -1,0 +1,24 @@
+{
+    "name": "hmoragrega/phpspec-data-provider",
+    "description": "An extension to allow data provider on PhpSpec",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hilari Moragrega",
+            "email": "hilari@hilarimoragrega.com"
+        }
+    ],
+    "config": {
+        "bin-dir": "bin"
+    },
+    "require": {
+        "php": ">=5.6",
+        "phpspec/phpspec": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "HMoragrega\\PhpSpec\\DataProvider\\": "src/"
+        }
+    }
+}

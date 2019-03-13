@@ -1,0 +1,7 @@
+suites:
+  default:
+    namespace: HMoragrega\PhpSpec\DataProvider
+    psr4_prefix: HMoragrega\PhpSpec\DataProvider
+
+extensions:
+  HMoragrega\PhpSpec\DataProvider\DataProviderExtension: ~
