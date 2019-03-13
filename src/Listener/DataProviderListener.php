@@ -65,8 +65,6 @@ class DataProviderListener implements EventSubscriberInterface
 
                 $examplesToAdd[] = new ExampleNode($title, $example->getFunctionReflection());
             }
-
-            $example->setTitle("- " . $example->getTitle());
         }
 
         foreach ($examplesToAdd as $example) {
