@@ -48,6 +48,9 @@ class DataProviderMaintainer implements Maintainer
     public function supports(ExampleNode $example): bool
     {
         $dataProviderMethod = $this->exampleParser->getDataProvider($example);
+        if (!$dataProviderMethod) {
+            return false;
+        }
 
         if (isset($this->providerData[$dataProviderMethod])) {
             return true;

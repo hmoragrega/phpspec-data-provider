@@ -20,7 +20,7 @@ class ExampleParser
         $method = $example->getFunctionReflection();
 
         $docComment = $method->getDocComment();
-        if (false === $docComment) {
+        if (!is_string($docComment)) {
             return null;
         }
 
