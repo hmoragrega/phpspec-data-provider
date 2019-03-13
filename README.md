@@ -84,4 +84,4 @@ function itCanConvertAStringToUppercaseDataProvider(): array
   61  ✔ can convert a string to uppercase
   61  ✔ 1) it can convert a string to uppercase
   61  ✔ 2) it can convert a string to uppercase
-``` 
+```

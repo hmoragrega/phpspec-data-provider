@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace HMoragrega\PhpSpec\DataProvider\Annotation;
+namespace HMoragrega\PhpSpec\DataProvider\Parser;
 
 use PhpSpec\Loader\Node\ExampleNode;
 

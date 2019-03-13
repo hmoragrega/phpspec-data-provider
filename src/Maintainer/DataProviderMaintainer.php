@@ -1,7 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace HMoragrega\PhpSpec\DataProvider\Maintainer;
 
+use HMoragrega\PhpSpec\DataProvider\Parser\ExampleParser;
 use PhpSpec\Loader\Node\ExampleNode;
 use PhpSpec\Runner\CollaboratorManager;
 use PhpSpec\Runner\Maintainer\Maintainer;
@@ -13,6 +14,24 @@ class DataProviderMaintainer implements Maintainer
     const EXAMPLE_NUMBER_PATTERN = '/^(\d+)\)/';
 
     /**
+     * @var ExampleParser
+     */
+    private $exampleParser;
+
+    /**
+     * @var array[]
+     */
+    private $providerData = [];
+
+    /**
+     * @param ExampleParser $exampleParser
+     */
+    public function __construct(ExampleParser $exampleParser)
+    {
+        $this->exampleParser = $exampleParser;
+    }
+
+    /**
      * @param ExampleNode $example
      *
      * @return boolean
@@ -20,23 +39,19 @@ class DataProviderMaintainer implements Maintainer
      */
     public function supports(ExampleNode $example): bool
     {
-        $docComment = $example->getFunctionReflection()->getDocComment();
-        if (false === $docComment) {
+        $dataProviderMethod = $this->exampleParser->getDataProvider($example);
+        $specification      = $example->getSpecification()->getClassReflection();
+
+        if (isset($this->providerData[$dataProviderMethod])) {
+            return true;
+        }
+
+        if (!$specification->hasMethod($dataProviderMethod)) {
             return false;
         }
 
-        if (0 === preg_match('/@dataProvider ([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/', $docComment, $matches)) {
-            return false;
-        }
-
-        $dataProviderMethod = $matches[1];
-
-        if (!$example->getSpecification()->getClassReflection()->hasMethod($dataProviderMethod)) {
-            return false;
-        }
-
-        $subject = $example->getSpecification()->getClassReflection()->newInstance();
-        $providedData = $example->getSpecification()->getClassReflection()->getMethod($dataProviderMethod)->invoke($subject);
+        $subject      = $specification->newInstance();
+        $providedData = $specification->getMethod($dataProviderMethod)->invoke($subject);
 
         if (!is_array($providedData)) {
             return false;
@@ -48,6 +63,8 @@ class DataProviderMaintainer implements Maintainer
             }
         }
 
+        $this->providerData[$dataProviderMethod] = $providedData;
+
         return true;
     }
 
@@ -56,22 +73,21 @@ class DataProviderMaintainer implements Maintainer
      * @param Specification $context
      * @param MatcherManager $matchers
      * @param CollaboratorManager $collaborators
-     *
-     * @throws \ReflectionException
      */
     public function prepare(ExampleNode $example, Specification $context, MatcherManager $matchers, CollaboratorManager $collaborators): void
     {
         $exampleNum   = $this->getExampleNumber($example->getTitle());
-        $providedData = $this->getDataFromProvider($example);
+        $providedData = $this->providerData[$this->exampleParser->getDataProvider($example)];
 
         if (!array_key_exists($exampleNum, $providedData)) {
             return ;
         }
 
-        $data = $providedData[$exampleNum];
+        $data               = $providedData[$exampleNum];
+        $function           = $example->getFunctionReflection();
+        $numberOfParameters = $function->getNumberOfParameters();
 
-        foreach ($example->getFunctionReflection()->getParameters() as $position => $parameter) {
-            $numberOfParameters = $example->getFunctionReflection()->getNumberOfParameters();
+        foreach ($function->getParameters() as $position => $parameter) {
             if ($numberOfParameters < count($data)) {
                 $position++;
             }
@@ -79,37 +95,9 @@ class DataProviderMaintainer implements Maintainer
             if (!isset($data[$position])) {
                 continue;
             }
+
             $collaborators->set($parameter->getName(), $data[$position]);
         }
-    }
-
-    /**
-     * @param ExampleNode $example
-     *
-     * @return bool|mixed
-     * @throws \ReflectionException
-     */
-    private function getDataFromProvider(ExampleNode $example)
-    {
-        $docComment = $example->getFunctionReflection()->getDocComment();
-        if (false === $docComment) {
-            return [];
-        }
-
-        if (0 === preg_match('/@dataProvider ([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/', $docComment, $matches)) {
-            return [];
-        }
-
-        $dataProviderMethod = $matches[1];
-
-        if (!$example->getSpecification()->getClassReflection()->hasMethod($dataProviderMethod)) {
-            return array();
-        }
-
-        $subject = $example->getSpecification()->getClassReflection()->newInstance();
-        $providedData = $example->getSpecification()->getClassReflection()->getMethod($dataProviderMethod)->invoke($subject);
-
-        return (is_array($providedData)) ? $providedData : array();
     }
 
     /**
@@ -120,7 +108,7 @@ class DataProviderMaintainer implements Maintainer
      */
     public function teardown(ExampleNode $example, Specification $context, MatcherManager $matchers, CollaboratorManager $collaborators): void
     {
-
+        unset($this->providerData[$this->exampleParser->getDataProvider($example)]);
     }
 
     /**
@@ -132,12 +120,13 @@ class DataProviderMaintainer implements Maintainer
     }
 
     /**
-     * @param $title
+     * @param string $title
+     *
      * @return int
      */
-    private function getExampleNumber($title)
+    private function getExampleNumber(string $title): int
     {
-        if (0 === preg_match(self::EXAMPLE_NUMBER_PATTERN, $title, $matches)) {
+        if (!preg_match(self::EXAMPLE_NUMBER_PATTERN, $title, $matches)) {
             return 0;
         }
 

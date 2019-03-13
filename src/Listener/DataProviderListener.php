@@ -1,13 +1,36 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace HMoragrega\PhpSpec\DataProvider\Listener;
 
-use PhpSpec\Event\SpecificationEvent;
+use HMoragrega\PhpSpec\DataProvider\Parser\DataProviderExtractor;
+use HMoragrega\PhpSpec\DataProvider\Parser\ExampleParser;
+use PhpSpec\Event\SuiteEvent;
 use PhpSpec\Loader\Node\ExampleNode;
+use PhpSpec\Loader\Node\SpecificationNode;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class DataProviderListener implements EventSubscriberInterface
 {
+    /**
+     * @var ExampleParser
+     */
+    private $exampleParser;
+
+    /**
+     * @var DataProviderExtractor
+     */
+    private $dataProviderExtractor;
+
+    /**
+     * @param ExampleParser $exampleParser
+     * @param DataProviderExtractor $dataProviderExtractor
+     */
+    public function __construct(ExampleParser $exampleParser, DataProviderExtractor $dataProviderExtractor)
+    {
+        $this->exampleParser         = $exampleParser;
+        $this->dataProviderExtractor = $dataProviderExtractor;
+    }
+
     /**
      * Returns an array of event names this subscriber wants to listen to.
      *
@@ -28,66 +51,64 @@ class DataProviderListener implements EventSubscriberInterface
      */
     public static function getSubscribedEvents()
     {
-        return ['beforeSpecification' => ['beforeSpecification']];
+        return [
+            'beforeSuite' => ['beforeSuite', 100],
+        ];
     }
 
-    public function beforeSpecification(SpecificationEvent $event)
+    /**
+     * @param SuiteEvent $event
+     *
+     * @throws \ReflectionException
+     */
+    public function beforeSuite(SuiteEvent $event)
     {
-        $examplesToAdd = [];
-
-        foreach ($event->getSpecification()->getExamples() as $example) {
-
-            $dataProviderMethod = $this->getDataProvider($example->getFunctionReflection());
-            if (empty($dataProviderMethod)) {
-                continue;
-            }
-
-            if (!$example->getSpecification()->getClassReflection()->hasMethod($dataProviderMethod)) {
-                continue;
-            }
-
-            $subject = $example->getSpecification()->getClassReflection()->newInstance();
-            $providedData = $example->getSpecification()->getClassReflection()->getMethod($dataProviderMethod)->invoke($subject);
-
-            if (!is_array($providedData)) {
-                continue;
-            }
-
-            $numberOfParameters = $example->getFunctionReflection()->getNumberOfParameters();
-
-            foreach ($providedData as $index => $dataRow) {
-
-                $title  = $index+1 . ') '.$example->getTitle();
-
-                if ($numberOfParameters < count($dataRow)) {
-                    $title .= ': '.$dataRow[0];
-                }
-
-                $examplesToAdd[] = new ExampleNode($title, $example->getFunctionReflection());
-            }
-        }
-
-        foreach ($examplesToAdd as $example) {
-            $event->getSpecification()->addExample($example);
+        foreach ($event->getSuite()->getSpecifications() as $specification) {
+            $this->addExamplesToSpecification($specification);
         }
     }
 
     /**
-     * @param \ReflectionFunctionAbstract $method
+     * @param SpecificationNode $specificationNode
      *
-     * @return string|null
+     * @throws \ReflectionException
      */
-    private function getDataProvider(\ReflectionFunctionAbstract $method): string
+    public function addExamplesToSpecification(SpecificationNode $specificationNode)
     {
-        $docComment = $method->getDocComment();
-        if (false === $docComment) {
-            return '';
+        foreach ($specificationNode->getExamples() as $example) {
+
+            $dataProviderMethod = $this->exampleParser->getDataProvider($example);
+            if (empty($dataProviderMethod)) {
+                continue;
+            }
+
+            $providedData       = $this->dataProviderExtractor->getProvidedData($example, $dataProviderMethod);
+            $exampleFunction    = $example->getFunctionReflection();
+            $numberOfParameters = $exampleFunction->getNumberOfParameters();
+
+            foreach ($providedData as $index => $dataRow) {
+                $title = $this->buildExampleTitle($index, $numberOfParameters, $dataRow, $example);
+                $specificationNode->addExample(new ExampleNode($title, $exampleFunction));
+            }
+        }
+    }
+
+    /**
+     * @param int         $index
+     * @param int         $numberOfParameters
+     * @param array       $dataRow
+     * @param ExampleNode $example
+     *
+     * @return string
+     */
+    private function buildExampleTitle(int $index, int $numberOfParameters, array $dataRow, ExampleNode $example)
+    {
+        $title = $index + 1 . ') ' . $example->getTitle();
+
+        if ($numberOfParameters < count($dataRow)) {
+            $title .= ': ' . $dataRow[0];
         }
 
-        if (0 === preg_match('/@dataProvider ([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)/', $docComment, $matches)) {
-            return '';
-        }
-
-        return $matches[1];
+        return $title;
     }
 }
