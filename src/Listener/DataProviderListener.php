@@ -73,23 +73,36 @@ class DataProviderListener implements EventSubscriberInterface
      *
      * @throws \ReflectionException
      */
-    public function addExamplesToSpecification(SpecificationNode $specificationNode)
+    private function addExamplesToSpecification(SpecificationNode $specificationNode)
     {
         foreach ($specificationNode->getExamples() as $example) {
-
-            $dataProviderMethod = $this->exampleParser->getDataProvider($example);
-            if (empty($dataProviderMethod)) {
-                continue;
+            foreach ($this->getExampleFromDataProvider($example) as $newExample) {
+                $specificationNode->addExample($newExample);
             }
+        }
+    }
 
-            $providedData       = $this->dataProviderExtractor->getProvidedData($example, $dataProviderMethod);
-            $exampleFunction    = $example->getFunctionReflection();
-            $numberOfParameters = $exampleFunction->getNumberOfParameters();
+    /**
+     * @param ExampleNode $example
+     *
+     * @return \Generator
+     *
+     * @throws \ReflectionException
+     */
+    private function getExampleFromDataProvider(ExampleNode $example): \Generator
+    {
+        $dataProviderMethod = $this->exampleParser->getDataProvider($example);
+        if (empty($dataProviderMethod)) {
+            return null;
+        }
 
-            foreach ($providedData as $index => $dataRow) {
-                $title = $this->buildExampleTitle($index, $numberOfParameters, $dataRow, $example);
-                $specificationNode->addExample(new ExampleNode($title, $exampleFunction));
-            }
+        $providedData       = $this->dataProviderExtractor->getProvidedData($example, $dataProviderMethod);
+        $exampleFunction    = $example->getFunctionReflection();
+        $numberOfParameters = $exampleFunction->getNumberOfParameters();
+
+        foreach ($providedData as $index => $dataRow) {
+            $title = $this->buildExampleTitle($index, $numberOfParameters, $dataRow, $example);
+            yield new ExampleNode($title, $exampleFunction);
         }
     }
 
