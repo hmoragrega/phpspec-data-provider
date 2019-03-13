@@ -6,7 +6,7 @@ php:
   - 7.2
 
 env:
-  - COMPOSER_OPTIONS='install'
+  - COMPOSER_OPTIONS='install --prefer-source'
 
 before_install:
   - composer self-update
