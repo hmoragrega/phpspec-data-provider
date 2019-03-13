@@ -116,10 +116,10 @@ class DataProviderListener implements EventSubscriberInterface
      */
     private function buildExampleTitle(int $index, int $numberOfParameters, array $dataRow, ExampleNode $example)
     {
-        $title = $index + 1 . ') ' . $example->getTitle();
+        $title = ($index + 1).') '.$example->getTitle();
 
         if ($numberOfParameters < count($dataRow)) {
-            $title .= ': ' . $dataRow[0];
+            $title .= ': '.$dataRow[0];
         }
 
         return $title;

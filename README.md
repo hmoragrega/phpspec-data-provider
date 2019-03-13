@@ -1,5 +1,6 @@
 # PhpSpec Data Provider
 [![Build Status](https://travis-ci.org/hmoragrega/phpspec-data-provider.svg?branch=master)](https://travis-ci.org/hmoragrega/phpspec-data-provider)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/hmoragrega/phpspec-data-provider/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/hmoragrega/phpspec-data-provider/?branch=master)
 
 This extension allows to use data provider functions with PhpSpec
 

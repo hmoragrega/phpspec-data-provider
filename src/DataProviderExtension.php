@@ -18,11 +18,11 @@ class DataProviderExtension implements Extension
      */
     public function load(ServiceContainer $container, array $params)
     {
-        $container->define('event_dispatcher.listeners.data_provider', function () use ($container) {
+        $container->define('event_dispatcher.listeners.data_provider', function() {
             return new DataProviderListener(new ExampleParser(), new DataProviderExtractor());
         }, ['event_dispatcher.listeners']);
 
-        $container->define('runner.maintainers.data_provider', function () use ($container) {
+        $container->define('runner.maintainers.data_provider', function() {
             return new DataProviderMaintainer(new ExampleParser(), new DataProviderExtractor());
         }, ['runner.maintainers']);
     }

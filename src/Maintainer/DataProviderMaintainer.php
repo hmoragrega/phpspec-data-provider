@@ -78,7 +78,7 @@ class DataProviderMaintainer implements Maintainer
         $providedData = $this->providerData[$this->exampleParser->getDataProvider($example)];
 
         if (!array_key_exists($exampleNum, $providedData)) {
-            return ;
+            return;
         }
 
         $data               = $providedData[$exampleNum];
