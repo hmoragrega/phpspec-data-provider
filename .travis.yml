@@ -6,12 +6,7 @@ php:
   - 7.2
 
 env:
-  - COMPOSER_OPTIONS='install --prefer-source'
-
-matrix:
-  include:
-    - php: 5.6
-      env: COMPOSER_OPTIONS='update --prefer-lowest'
+  - COMPOSER_OPTIONS='install'
 
 before_install:
   - composer self-update
